@@ -5,9 +5,8 @@ SyncWave is a real-time collaborative watch party web application built with **R
 ---
 
 ## 🌐 Live Deployment
-- **Frontend App (Vercel):** [https://syncwave-jet.vercel.app](https://syncwave-jet.vercel.app/)
-- **Backend WebSocket Server (Render):** [https://syncwave-backend-3n84.onrender.com](https://syncwave-backend-3n84.onrender.com)
-
+- **Frontend App (Vercel):** [Live Demo App](https://syncwave-jet.vercel.app/)
+- **Backend WebSocket Server (Render):** [WebSocket API Endpoint](https://syncwave-backend-3n84.onrender.com)
 ---
 
 ## ✨ Features
