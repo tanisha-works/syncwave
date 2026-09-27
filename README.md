@@ -5,8 +5,8 @@ SyncWave is a real-time collaborative watch party web application built with **R
 ---
 
 ## 🌐 Live Deployment
-- **Frontend App (Vercel):** [(https://syncwave-jet.vercel.app/)]
-- **Backend WebSocket Server (Render):** [(https://syncwave-backend-3n84.onrender.com)]
+- **Frontend App (Vercel):** [https://syncwave-jet.vercel.app](https://syncwave-jet.vercel.app/)
+- **Backend WebSocket Server (Render):** [https://syncwave-backend-3n84.onrender.com](https://syncwave-backend-3n84.onrender.com)
 
 ---
 
@@ -45,15 +45,21 @@ The application utilizes a client-server architecture with bidirectional WebSock
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/tanisha-works/syncwave.git](https://github.com/tanisha-works/syncwave.git)
+git clone https://github.com/tanisha-works/syncwave.git
 cd syncwave
+```
 
-2. Backend Setup
+
+### 2. Backend Setup
+```bash
 cd backend
 npm install
 npm start
+```
 
-3. Frontend Setup
+### 3. Frontend Setup
+```bash
 cd ../frontend
 npm install
 npm run dev
+```
