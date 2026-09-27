@@ -1,3 +1,6 @@
+/* =========================================================
+   GLOBAL RESET & CSS VARIABLES
+   ========================================================= */
 :root {
   --bg-main: #0a0d14;
   --bg-card: rgba(18, 23, 37, 0.75);
@@ -16,11 +19,22 @@
   --radius-sm: 6px;
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+html,
+body {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 body {
@@ -30,7 +44,6 @@ body {
     radial-gradient(circle at 80% 50%, rgba(236, 72, 153, 0.08) 0%, transparent 50%);
   color: var(--text-main);
   min-height: 100vh;
-  overflow-x: hidden;
 }
 
 /* ================= TOP NAVBAR ================= */
@@ -38,13 +51,16 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 32px;
-  background: rgba(10, 13, 20, 0.8);
+  padding: 12px 24px;
+  background: rgba(10, 13, 20, 0.85);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
   z-index: 100;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .brand-logo {
@@ -64,6 +80,7 @@ body {
   color: #fff;
   font-size: 1.2rem;
   box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+  flex-shrink: 0;
 }
 
 .brand-text h1 {
@@ -83,19 +100,25 @@ body {
 .header-meta {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.badge-pill {
-  display: flex;
+.badge-pill, 
+.header-meta button, 
+.header-meta .btn {
+  height: 38px;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   background: rgba(15, 21, 35, 0.8);
   border: 1px solid var(--border-color);
-  padding: 6px 14px;
+  padding: 0 14px;
   border-radius: 20px;
   font-size: 0.82rem;
   font-weight: 600;
+  box-sizing: border-box;
 }
 
 .live-dot {
@@ -104,6 +127,7 @@ body {
   background: var(--success);
   border-radius: 50%;
   box-shadow: 0 0 8px var(--success);
+  flex-shrink: 0;
 }
 
 /* ================= LANDING PAGE ================= */
@@ -138,8 +162,8 @@ body {
 
 .hero-title span {
   background: linear-gradient(135deg, #818cf8, #c084fc);
-  -webkit-background-clip: text; /* For WebKit/Blink browsers */
-  background-clip: text;         /* Standard property */
+  -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -151,7 +175,6 @@ body {
   margin: 0 auto 36px auto;
 }
 
-/* Landing Form Box */
 .party-card {
   max-width: 520px;
   margin: 0 auto 60px auto;
@@ -224,7 +247,6 @@ body {
   padding: 0 12px;
 }
 
-/* Landing Feature Cards Grid */
 .features-grid {
   max-width: 1200px;
   margin: 0 auto 80px auto;
@@ -268,100 +290,146 @@ body {
   line-height: 1.5;
 }
 
-/* ================= ROOM PAGE ================= */
+/* ================= ROOM PAGE LAYOUT ================= */
 .room-container {
-  max-width: 1560px;
+  max-width: 1600px;
   margin: 0 auto;
-  padding: 24px;
+  padding: 20px;
 }
 
 .room-layout {
   display: grid;
   grid-template-columns: 1fr 380px;
-  gap: 24px;
-}
-
-@media (max-width: 1080px) {
-  .room-layout {
-    grid-template-columns: 1fr;
-  }
+  gap: 20px;
+  align-items: start;
 }
 
 .main-view {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-width: 0;
 }
 
-/* Custom Player Container */
+/* ================= VIDEO PLAYER (STRICT OVERLAY & ASPECT RATIO) ================= */
+/* ================= VIDEO PLAYER & OVERLAYS ================= */
 .player-container {
-  position: relative;
-  width: 100%;
+  position: relative !important;
+  width: 100% !important;
   aspect-ratio: 16 / 9;
-  background: #000;
-  border-radius: var(--radius-lg);
+  background: #000000;
+  border-radius: var(--radius-lg, 16px);
   overflow: hidden;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  display: block;
 }
 
+/* Force ReactPlayer and its internal wrappers to fill the 16:9 container strictly */
+.player-container > div:not(.host-status-banner):not(.sync-status-banner):not(.reaction-overlay),
+.player-container iframe,
+.player-container video {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Host Badge Overlay - Strictly size as a compact floating pill */
 .host-status-banner {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(239, 68, 68, 0.85);
+  position: absolute !important;
+  top: 14px !important;
+  left: 14px !important;
+  z-index: 30 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: unset !important;
+  max-height: 36px !important;
+  background: rgba(220, 38, 38, 0.9) !important; /* Semi-transparent red */
   backdrop-filter: blur(8px);
-  color: #fff;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 0.78rem;
-  font-weight: 700;
+  color: #ffffff !important;
+  padding: 6px 14px !important;
+  border-radius: 20px !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  pointer-events: none !important;
+  line-height: 1 !important;
 }
 
+/* Sync Status Overlay - Strictly size as a compact floating pill */
 .sync-status-banner {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(16, 185, 129, 0.2);
-  border: 1px solid rgba(16, 185, 129, 0.4);
-  color: #34d399;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 0.78rem;
-  font-weight: 700;
+  position: absolute !important;
+  top: 14px !important;
+  right: 14px !important;
+  z-index: 30 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: unset !important;
+  max-height: 36px !important;
+  background: rgba(16, 185, 129, 0.25) !important;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
+  color: #34d399 !important;
+  padding: 6px 14px !important;
+  border-radius: 20px !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  pointer-events: none !important;
+  line-height: 1 !important;
 }
 
-/* Floating Emoji Overlay */
+/* Reaction Overlay Container */
 .reaction-overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-  z-index: 15;
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important;
+  z-index: 20 !important;
+  overflow: hidden !important;
 }
-
 .floating-emoji {
   position: absolute;
-  bottom: 20px;
-  font-size: 2.5rem;
-  animation: floatBurst 2.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  bottom: 0;
+  font-size: 2.2rem;
+  user-select: none;
+  animation: floatUp 2.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  filter: drop-shadow(0px 4px 8px rgba(0, 0, 0, 0.5));
 }
 
-@keyframes floatBurst {
-  0% { opacity: 1; transform: translateY(0) scale(0.5); }
-  50% { opacity: 0.9; transform: translateY(-180px) scale(1.2); }
-  100% { opacity: 0; transform: translateY(-380px) scale(0.8); }
+@keyframes floatUp {
+  0% {
+    transform: translateY(0) scale(0.6) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(-40px) scale(1.2) rotate(-10deg);
+  }
+  50% {
+    transform: translateY(-180px) scale(1) rotate(10deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-380px) scale(0.8) rotate(-15deg);
+    opacity: 0;
+  }
 }
 
-/* Preset Cards Section */
+/* ================= PRESETS & CONTROLS ================= */
 .presets-section {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -405,77 +473,6 @@ body {
   background: rgba(99, 102, 241, 0.15);
 }
 
-/* Right Dashboard Sidebar */
-.sidebar-panel {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 540px; /* Aligns with 16:9 video player height */
-  overflow: hidden;
-}
-
-.sidebar-nav {
-  display: flex;
-  border-bottom: 1px solid var(--border-color);
-  background: rgba(11, 15, 26, 0.6);
-}
-
-.sidebar-tab {
-  flex: 1;
-  padding: 14px;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 0.88rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.sidebar-tab.active {
-  color: var(--text-main);
-  border-bottom-color: var(--primary);
-  background: rgba(99, 102, 241, 0.08);
-}
-
-/* Reactions Toolbar in Chat */
-.reaction-bar-chat {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  background: rgba(15, 23, 42, 0.8);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  overflow-x: hidden; /* Removes the ugly horizontal scrollbar */
-  flex-wrap: wrap;    /* Wraps emojis cleanly if space is tight */
-}
-
-.reaction-bar-chat label {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
-.emoji-btn {
-  background: transparent;
-  border: none;
-  font-size: 1.25rem;
-  cursor: pointer;
-  transition: transform 0.15s ease;
-}
-
-.emoji-btn:hover {
-  transform: scale(1.3);
-}
-
-/* Buttons and Inputs Common */
 .input-box {
   width: 100%;
   padding: 12px 16px;
@@ -536,291 +533,62 @@ body {
   background: rgba(239, 68, 68, 0.3);
 }
 
-/* ==========================================
-   CHAT & SIDEBAR CONTAINER LAYOUT
-   ========================================== */
-.chat-container {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  justify-content: space-between;
-  overflow: hidden;
-}
-
-/* Scrollable message container */
-.chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start; /* Ensures chats start strictly from top */
-  gap: 10px;
-}
-
-.chat-bubble {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  line-height: 1.4;
-  word-break: break-word;
-}
-
-.chat-bubble.system-msg {
-  background: rgba(129, 140, 248, 0.1);
-  border-color: rgba(129, 140, 248, 0.2);
-  color: #a5b4fc;
-}
-
-.chat-author {
-  color: #818cf8;
-}
-
-/* Fixed Bottom Chat Form */
-.chat-input-form {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px;
-  background: #111827;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  margin-top: auto;
-}
-
-/* Styled Input with exact matching height */
-.chat-input {
-  flex: 1;
-  height: 42px;
-  box-sizing: border-box;
-  background: #1f2937;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  padding: 0 14px;
-  color: #ffffff;
-  font-size: 0.9rem;
-  outline: none;
-  transition: border-color 0.2s ease;
-}
-
-.chat-input:focus {
-  /* border-color: #6366f1; */
-  border-color: var(--primary);
-}
-
-/* Send Button with exact matching height */
-.chat-send-btn {
-  height: 42px;
-  box-sizing: border-box;
-  padding: 0 20px;
-  background: var(--primary);
-  color: #ffffff;
-  border: none;
-  border-radius: var(--radius-md);
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.chat-send-btn:hover {
-  /* background: #4f46e5; */
-  background: var(--primary-hover);
-}
-
-/* ==========================================
-   HORIZONTAL PARTICIPANT LIST & BADGES
-   ========================================== */
-.participant-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px;
-}
-
-.participant-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 10px 14px;
-  border-radius: 8px;
-}
-
-.user-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.user-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: #374151;
-  color: #818cf8;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.95rem;
-  border: 1px solid rgba(129, 140, 248, 0.3);
-}
-
-.user-details {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.user-name {
-  font-weight: 600;
-  color: #f3f4f6;
-  font-size: 0.95rem;
-}
-
-/* Inline Role Badges */
-.role-badge {
-  font-size: 0.72rem;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.role-host {
-  background: rgba(234, 179, 8, 0.2);
-  color: #fde047;
-  border: 1px solid rgba(234, 179, 8, 0.4);
-}
-
-.role-moderator {
-  background: rgba(59, 130, 246, 0.2);
-  color: #93c5fd;
-  border: 1px solid rgba(59, 130, 246, 0.4);
-}
-
-.role-participant {
-  background: rgba(156, 163, 175, 0.2);
-  color: #d1d5db;
-  border: 1px solid rgba(156, 163, 175, 0.4);
-}
-
-.action-menu {
-  display: flex;
-  gap: 6px;
-}
-
-.btn-xs {
-  padding: 4px 10px;
-  font-size: 0.75rem;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-danger {
-  background: #ef4444;
-  color: #fff;
-}
-
-.btn-danger:hover {
-  background: #dc2626;
-}
-
-.empty-chat-msg {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  text-align: center;
-  margin-top: 20px;
-}
-
-/* Chat Input Bar pinned to the bottom */
-.chat-input-form-bottom {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 14px;
-  background: rgba(11, 15, 26, 0.8);
-  border-top: 1px solid var(--border-color);
-  margin-top: auto;
-}
-
-/* Perfectly aligned matching heights */
-.chat-input {
-  flex: 1;
-  height: 42px;
-  box-sizing: border-box;
-  background: var(--bg-input);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 0 14px;
-  color: var(--text-main);
-  font-size: 0.9rem;
-  outline: none;
-  transition: border-color 0.2s ease;
-}
-
-
-
-/* ==========================================
-   SIDEBAR & CHAT FIXED SCROLLABLE LAYOUT
-   ========================================== */
-
-/* Outer Panel Container matching Video height strictly */
+/* ================= SIDEBAR & CHAT ================= */
 .sidebar-panel {
   background: #111827;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-  height: 520px; /* Fixed height constraint */
-  max-height: 520px;
-  overflow: hidden; /* Prevents container from stretching */
+  height: 520px;
+  max-height: calc(100vh - 120px);
+  overflow: hidden;
+  position: sticky;
+  top: 80px;
 }
 
-/* Tab Headers */
-.tab-header {
+.tab-header, .sidebar-nav {
   display: flex;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(11, 15, 26, 0.6);
+  flex-shrink: 0;
 }
 
-.tab-btn {
+.tab-btn, .sidebar-tab {
   flex: 1;
   padding: 12px;
   background: transparent;
   border: none;
+  border-bottom: 2px solid transparent;
   color: #9ca3af;
   font-weight: 600;
+  font-size: 0.88rem;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   transition: all 0.2s ease;
 }
 
-.tab-btn.active {
-  color: #818cf8;
-  border-bottom: 2px solid #6366f1;
-  background: rgba(99, 102, 241, 0.05);
+.tab-btn.active, .sidebar-tab.active {
+  color: var(--text-main);
+  border-bottom-color: var(--primary);
+  background: rgba(99, 102, 241, 0.08);
 }
 
-/* Chat flex layout */
 .chat-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 0; /* Important for inner flex scrolling */
-  justify-content: space-between;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
-/* Chat Messages scroll area */
 .chat-messages {
   flex: 1;
   min-height: 0;
-  overflow-y: auto; /* Enables scrolling inside chat box */
+  overflow-y: auto;
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -853,45 +621,89 @@ body {
   color: #818cf8;
 }
 
-/* Bottom Input Form */
-.chat-input-form-bottom {
+.reaction-bar-chat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+}
+
+.reaction-bar-chat::-webkit-scrollbar {
+  display: none;
+}
+
+.reaction-bar-chat label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #9ca3af;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+
+.emoji-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.emoji-btn:hover {
+  transform: scale(1.2);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.chat-input-form-bottom, .chat-input-form {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 12px;
   background: #0f172a;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
 }
 
 .chat-input {
   flex: 1;
   height: 40px;
   box-sizing: border-box;
-  background: #1e293b;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
   padding: 0 12px;
-  color: #ffffff;
+  color: var(--text-main);
   font-size: 0.88rem;
   outline: none;
 }
 
 .chat-input:focus {
-  border-color: #6366f1;
+  border-color: var(--primary);
 }
 
 .chat-send-btn {
   height: 40px;
   padding: 0 16px;
-  background: #6366f1;
+  background: var(--primary);
   color: #ffffff;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   font-weight: 600;
   cursor: pointer;
 }
 
-/* Participant List Scrolling & Buttons */
+.chat-send-btn:hover {
+  background: var(--primary-hover);
+}
+
+/* Participant List */
 .participant-list {
   flex: 1;
   overflow-y: auto;
@@ -972,87 +784,56 @@ body {
 .btn-transfer { background: #eab308; color: #000; }
 .btn-kick { background: #ef4444; color: #fff; }
 
-/* ==========================================
-   FLOATING EMOJI REACTIONS ANIMATION
-   ========================================== */
-
-/* Video container MUST be relative so reactions overlay directly on top of video */
-.player-container {
-  position: relative;
-  overflow: hidden;
-}
-
-/* Absolute container covering the video player area */
-.reaction-overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none; /* Allows user to still click play/pause on player */
-  z-index: 20;
-  overflow: hidden;
-}
-
-/* Floating Emoji Styling & Animation Trigger */
-.floating-emoji {
-  position: absolute;
-  bottom: 0;
-  font-size: 2.2rem;
-  user-select: none;
-  animation: floatUp 2.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-  filter: drop-shadow(0px 4px 8px rgba(0, 0, 0, 0.5));
-}
-
-/* Upward Movement + Fade Out Keyframes */
-@keyframes floatUp {
-  0% {
-    transform: translateY(0) scale(0.6) rotate(0deg);
-    opacity: 0;
+/* ================= MEDIA QUERIES ================= */
+@media (max-width: 1080px) {
+  .room-layout {
+    grid-template-columns: 1fr;
   }
-  15% {
-    opacity: 1;
-    transform: translateY(-40px) scale(1.2) rotate(-10deg);
-  }
-  50% {
-    transform: translateY(-180px) scale(1) rotate(10deg);
-    opacity: 0.9;
-  }
-  100% {
-    transform: translateY(-380px) scale(0.8) rotate(-15deg);
-    opacity: 0;
+  
+  .sidebar-panel {
+    position: static;
+    height: 480px;
   }
 }
 
-/* Reaction Button Bar Styling */
-.reaction-bar-chat {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  background: rgba(15, 23, 42, 0.8);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
+@media (max-width: 768px) {
+  .app-header {
+    padding: 10px 14px;
+  }
 
-.reaction-bar-chat label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #9ca3af;
-  margin-right: 4px;
-}
+  .header-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
 
-.emoji-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: transform 0.15s ease, background 0.15s ease;
-}
+  .header-meta button, 
+  .header-meta .btn, 
+  .badge-pill {
+    flex: 1;
+    font-size: 0.75rem;
+    padding: 0 6px;
+    height: 34px;
+  }
 
-.emoji-btn:hover {
-  transform: scale(1.25);
-  background: rgba(255, 255, 255, 0.15);
-}
+  .hero-title {
+    font-size: 2.1rem;
+  }
 
-.emoji-btn:active {
-  transform: scale(0.95);
+  .party-card {
+    padding: 20px;
+  }
+
+  .room-container {
+    padding: 10px;
+  }
+
+  .sidebar-panel {
+    height: 400px;
+  }
+
+  .host-status-banner,
+  .sync-status-banner {
+    font-size: 0.65rem;
+    padding: 4px 8px;
+  }
 }

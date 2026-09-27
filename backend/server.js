@@ -147,7 +147,7 @@ io.on('connection', (socket) => {
     const room = roomManager.getRoom(roomId);
     if (room && hasPermission(room, socket.id, ['Host', 'Moderator'])) {
       room.updateState(true, time);
-      socket.to(roomId).emit('play', { time });
+      io.to(roomId).emit('play', { time });
     }
   });
 
@@ -155,7 +155,7 @@ io.on('connection', (socket) => {
     const room = roomManager.getRoom(roomId);
     if (room && hasPermission(room, socket.id, ['Host', 'Moderator'])) {
       room.updateState(false, time);
-      socket.to(roomId).emit('pause', { time });
+      io.to(roomId).emit('pause', { time });
     }
   });
 
@@ -163,7 +163,7 @@ io.on('connection', (socket) => {
     const room = roomManager.getRoom(roomId);
     if (room && hasPermission(room, socket.id, ['Host', 'Moderator'])) {
       room.updateState(undefined, time);
-      socket.to(roomId).emit('seek', { time });
+      io.to(roomId).emit('seek', { time });
     }
   });
 
@@ -193,6 +193,12 @@ io.on('connection', (socket) => {
         queue: room.queue || []
       });
 
+      // Send direct socket event to the target user so their userRole updates instantly in React state
+      const targetSocket = io.sockets.sockets.get(targetUserId);
+      if (targetSocket) {
+        targetSocket.emit('sync_state', { userRole: targetRole });
+      }
+
       io.to(roomId).emit('receive_message', {
         id: 'sys_' + Date.now(),
         username: 'System',
@@ -217,6 +223,13 @@ io.on('connection', (socket) => {
         videoId: room.videoId,
         queue: room.queue || []
       });
+
+      // Notify former host and new host to update their local React state role
+      socket.emit('sync_state', { userRole: 'Participant' });
+      const targetSocket = io.sockets.sockets.get(targetUserId);
+      if (targetSocket) {
+        targetSocket.emit('sync_state', { userRole: 'Host' });
+      }
 
       io.to(roomId).emit('receive_message', {
         id: 'sys_' + Date.now(),

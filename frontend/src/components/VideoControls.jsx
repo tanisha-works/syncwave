@@ -24,29 +24,29 @@ export const VideoControls = ({ onChangeVideo, userRole }) => {
   };
 
   return (
-    <div className="video-controls-bar">
-      <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-        🔍 Change Video for Everyone
-      </div>
+    <div className="presets-section">
+      <h3>🔍 Change Video for Everyone</h3>
 
       {canControl ? (
-        <form onSubmit={handleSubmit} className="control-row">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
           <input
             type="text"
-            className="input-field"
+            className="input-box"
             placeholder="Paste YouTube Video URL or Video ID..."
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
           />
-          <button type="submit" className="btn btn-primary">
+          <button type="submit" className="btn btn-primary" style={{ whiteSpace: 'nowrap' }}>
             Play Video 🚀
           </button>
         </form>
       ) : (
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '8px' }}>
           🔒 Only Hosts and Moderators can change the playing video.
         </p>
       )}
     </div>
   );
 };
+
+export default VideoControls;
