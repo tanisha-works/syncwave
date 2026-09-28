@@ -28,7 +28,7 @@ const hasPermission = (room, socketId, allowedRoles) => {
   return participant && allowedRoles.includes(participant.role);
 };
 
-// Store disconnect timers so we can cancel them if a user reconnects quickly
+// Store disconnect timers using activeUserId so we can cancel refreshes cleanly
 const disconnectTimers = new Map();
 
 io.on('connection', (socket) => {
@@ -38,14 +38,16 @@ io.on('connection', (socket) => {
   socket.on('join_room', ({ roomId, username, userId }) => {
     let room = roomManager.getRoom(roomId);
     
-    // Use the permanent userId from localStorage, or fallback to socket.id
+    // Use permanent userId or fallback to socket.id
     const activeUserId = userId || socket.id;
-    socket.userId = activeUserId; // Attach to socket for disconnect tracking
+    socket.userId = activeUserId;
+    socket.roomId = roomId;
 
-    // If they were refreshing, cancel their disconnect deletion timer
+    // If refreshing or reconnecting, CANCEL the disconnect timer immediately
     if (disconnectTimers.has(activeUserId)) {
       clearTimeout(disconnectTimers.get(activeUserId));
       disconnectTimers.delete(activeUserId);
+      console.log(`🔄 Reconnection detected for user ${username || activeUserId}. Cancelled leave timer.`);
     }
 
     let isReconnecting = false;
@@ -57,24 +59,24 @@ io.on('connection', (socket) => {
       room.queue = room.queue || [];
       
       const host = room.getParticipant(socket.id);
-      if (host) host.userId = activeUserId; // Store persistent ID
+      if (host) host.userId = activeUserId;
     } else {
       // Room exists, check if user is already in it (Reconnection/Refresh)
       const participantsArray = Array.from(room.participants.values());
-      const existing = participantsArray.find(p => p.userId === activeUserId || p.id === socket.id);
+      const existing = participantsArray.find(p => p.userId === activeUserId);
       
       if (existing) {
         isReconnecting = true;
-        // Move their existing data to the new socket ID
-        room.participants.delete(existing.id); // Remove old socket reference
-        existing.id = socket.id;               // Update to new socket id
-        if (username) existing.username = username; // Update username if it changed
-        room.participants.set(socket.id, existing); // Save with new socket ID key
+        // Move existing participant data to new socket ID
+        room.participants.delete(existing.id);
+        existing.id = socket.id;
+        if (username) existing.username = username;
+        room.participants.set(socket.id, existing);
       } else {
         // Brand new user joining
         room.addParticipant(socket.id, username, 'Participant');
         const newPart = room.getParticipant(socket.id);
-        if (newPart) newPart.userId = activeUserId; // Store persistent ID
+        if (newPart) newPart.userId = activeUserId;
       }
     }
 
@@ -83,7 +85,7 @@ io.on('connection', (socket) => {
     const participant = room.getParticipant(socket.id);
     const userRole = participant ? participant.role : 'Participant';
 
-    // Only broadcast "joined the room" if it's a new connection, not a refresh
+    // Send "joined room" system message ONLY if it's a genuinely new join
     if (!isReconnecting) {
       const sysMessage = {
         id: 'sys_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
@@ -96,7 +98,7 @@ io.on('connection', (socket) => {
       io.to(roomId).emit('receive_message', sysMessage);
     }
 
-    // Always update everyone with the current participant list
+    // Always broadcast current participant list to everyone in the room
     io.to(roomId).emit('room_data_update', {
       participants: room.getFormattedParticipants(),
       videoId: room.videoId,
@@ -105,7 +107,7 @@ io.on('connection', (socket) => {
       queue: room.queue || []
     });
 
-    // Sync the current user who just joined/reconnected
+    // Sync user state
     socket.emit('sync_state', {
       videoId: room.videoId,
       currentTime: room.currentTime,
@@ -114,6 +116,48 @@ io.on('connection', (socket) => {
       chatHistory: room.chatHistory,
       queue: room.queue || []
     });
+  });
+
+  // EXPLICIT LEAVE ROOM (User clicks "Leave Room" button)
+  socket.on('leave_room', ({ roomId }) => {
+    const targetRoomId = roomId || socket.roomId;
+    if (!targetRoomId) return;
+
+    const room = roomManager.getRoom(targetRoomId);
+    if (!room) return;
+
+    const participant = room.getParticipant(socket.id);
+    const username = participant ? participant.username : 'A user';
+    const activeUserId = socket.userId || socket.id;
+
+    // Clear any pending disconnect timer
+    if (disconnectTimers.has(activeUserId)) {
+      clearTimeout(disconnectTimers.get(activeUserId));
+      disconnectTimers.delete(activeUserId);
+    }
+
+    // Immediately remove from room
+    room.removeParticipant(socket.id);
+    socket.leave(targetRoomId);
+
+    const sysMessage = {
+      id: 'sys_' + Date.now(),
+      username: 'System',
+      text: `${username} left the room.`,
+      isSystem: true
+    };
+    if (room.chatHistory) room.chatHistory.push(sysMessage);
+    io.to(targetRoomId).emit('receive_message', sysMessage);
+
+    io.to(targetRoomId).emit('room_data_update', {
+      participants: room.getFormattedParticipants(),
+      videoId: room.videoId,
+      queue: room.queue || []
+    });
+
+    if (room.participants.size === 0) {
+      roomManager.deleteRoom(targetRoomId);
+    }
   });
 
   // SEND MESSAGE
@@ -142,7 +186,7 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('receive_reaction', { emoji });
   });
 
-  // PLAY / PAUSE / SEEK PERMISSIONS (Host & Moderator)
+  // PLAY / PAUSE / SEEK
   socket.on('play', ({ roomId, time }) => {
     const room = roomManager.getRoom(roomId);
     if (room && hasPermission(room, socket.id, ['Host', 'Moderator'])) {
@@ -176,7 +220,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ASSIGN ROLE (MOD / DEMOTE)
+  // ASSIGN ROLE
   socket.on('assign_role', ({ roomId, targetUserId, newRole, role }) => {
     const targetRole = newRole || role;
     const room = roomManager.getRoom(roomId);
@@ -193,7 +237,6 @@ io.on('connection', (socket) => {
         queue: room.queue || []
       });
 
-      // Send direct socket event to the target user so their userRole updates instantly in React state
       const targetSocket = io.sockets.sockets.get(targetUserId);
       if (targetSocket) {
         targetSocket.emit('sync_state', { userRole: targetRole });
@@ -224,7 +267,6 @@ io.on('connection', (socket) => {
         queue: room.queue || []
       });
 
-      // Notify former host and new host to update their local React state role
       socket.emit('sync_state', { userRole: 'Participant' });
       const targetSocket = io.sockets.sockets.get(targetUserId);
       if (targetSocket) {
@@ -240,7 +282,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // KICK / REMOVE PARTICIPANT
+  // REMOVE / KICK PARTICIPANT
   const handleRemoveUser = ({ roomId, targetUserId }) => {
     const room = roomManager.getRoom(roomId);
     if (room && hasPermission(room, socket.id, ['Host'])) {
@@ -273,45 +315,55 @@ io.on('connection', (socket) => {
   socket.on('remove_participant', handleRemoveUser);
   socket.on('kick_user', handleRemoveUser);
 
-  // DISCONNECT (With 3-Second Grace Period for Refreshes)
+  // DISCONNECT (With 4-Second Grace Period for Refreshes)
   socket.on('disconnecting', () => {
     socket.rooms.forEach((roomId) => {
-      if (roomId === socket.id) return; // Skip default socket room
+      if (roomId === socket.id) return;
       const room = roomManager.getRoom(roomId);
       
       if (room) {
         const participant = room.getParticipant(socket.id);
         const username = participant ? participant.username : 'A user';
-        const userId = socket.userId || socket.id;
+        const activeUserId = socket.userId || socket.id;
 
-        // Set a timer. If they don't reconnect in 3 seconds, remove them.
+        // Set a timer for 4 seconds to allow page refreshes to reconnect cleanly
         const timer = setTimeout(() => {
-          room.removeParticipant(socket.id);
-          
-          const sysMessage = {
-            id: 'sys_' + Date.now(),
-            username: 'System',
-            text: `${username} left the room.`,
-            isSystem: true
-          };
-          
-          if (room.chatHistory) room.chatHistory.push(sysMessage);
-          io.to(roomId).emit('receive_message', sysMessage);
-          
-          io.to(roomId).emit('room_data_update', {
-            participants: room.getFormattedParticipants(),
-            videoId: room.videoId,
-            queue: room.queue || []
-          });
+          // Re-fetch the current room and check if this persistent user exists under ANY socket ID
+          const currentRoom = roomManager.getRoom(roomId);
+          if (currentRoom) {
+            const partsArray = Array.from(currentRoom.participants.values());
+            const stillPresent = partsArray.some(p => p.userId === activeUserId);
 
-          if (room.participants.size === 0) {
-            roomManager.deleteRoom(roomId);
+            // ONLY emit leave message and remove if they didn't reconnect
+            if (!stillPresent) {
+              currentRoom.removeParticipant(socket.id);
+              
+              const sysMessage = {
+                id: 'sys_' + Date.now(),
+                username: 'System',
+                text: `${username} left the room.`,
+                isSystem: true
+              };
+              
+              if (currentRoom.chatHistory) currentRoom.chatHistory.push(sysMessage);
+              io.to(roomId).emit('receive_message', sysMessage);
+              
+              io.to(roomId).emit('room_data_update', {
+                participants: currentRoom.getFormattedParticipants(),
+                videoId: currentRoom.videoId,
+                queue: currentRoom.queue || []
+              });
+
+              if (currentRoom.participants.size === 0) {
+                roomManager.deleteRoom(roomId);
+              }
+            }
           }
 
-          disconnectTimers.delete(userId);
-        }, 3000); // 3-second grace period
+          disconnectTimers.delete(activeUserId);
+        }, 4000);
 
-        disconnectTimers.set(userId, timer);
+        disconnectTimers.set(activeUserId, timer);
       }
     });
   });

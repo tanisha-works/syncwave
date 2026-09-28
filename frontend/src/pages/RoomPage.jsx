@@ -87,7 +87,7 @@ export const RoomPage = () => {
 
     const handleKicked = () => {
       alert('You were removed from the watch party.');
-      navigate('/');
+      navigate('/', { replace: true });
     };
 
     socket.on('room_data_update', handleRoomDataUpdate);
@@ -99,6 +99,8 @@ export const RoomPage = () => {
     socket.on('kicked', handleKicked);
 
     return () => {
+      // CLEANUP: Inform server on unmount & unbind listeners
+      socket.emit('leave_room', { roomId });
       socket.off('room_data_update', handleRoomDataUpdate);
       socket.off('sync_state', handleSyncState);
       socket.off('receive_message', handleIncomingMessage);
@@ -109,11 +111,22 @@ export const RoomPage = () => {
     };
   }, [socket, roomId]);
 
-  const sendReaction = (emoji) => {
-    // 1. Immediately spawn floating emoji locally on click
-    spawnFloatingEmoji(emoji);
+  const handleLeaveRoom = () => {
+  if (socket && roomId) {
+    socket.emit('leave_room', { roomId });
+  }
+  
+  // If user came from Home page, go back to that same Home page in browser history
+  if (window.history.length > 2) {
+    navigate(-1);
+  } else {
+    // Fallback if they opened the room via a direct link
+    navigate('/', { replace: true });
+  }
+};
 
-    // 2. Broadcast reaction to all other users in the room
+  const sendReaction = (emoji) => {
+    spawnFloatingEmoji(emoji);
     if (socket) {
       socket.emit('send_reaction', { roomId, emoji });
     }
@@ -181,7 +194,7 @@ export const RoomPage = () => {
           <div className="badge-pill" style={{ color: '#4ade80' }}>
             🟢 Live
           </div>
-          <button className="btn btn-danger" onClick={() => navigate('/')}>
+          <button className="btn btn-danger" onClick={handleLeaveRoom}>
             🚪 Leave
           </button>
         </div>
